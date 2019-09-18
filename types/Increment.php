@@ -1,12 +1,11 @@
 <?php
 namespace dokuwiki\plugin\struct\types;
 
-use dokuwiki\plugin\struct\meta\QueryBuilder;
-use dokuwiki\plugin\struct\meta\QueryBuilderWhere;
+use dokuwiki\plugin\struct\meta\Search;
 use dokuwiki\plugin\struct\meta\ValidationException;
 
 /**
- * Class Autoinc
+ * Class Increment
  *
  * A autoincrementing field
  *
@@ -14,38 +13,36 @@ use dokuwiki\plugin\struct\meta\ValidationException;
  */
 class Increment extends Decimal {
 
-    protected $config = [
-        'zerofill' => '0'
-    ];
-
     /**
-     * Output the stored data
+     * Return the editor to edit a single value
      *
-     * @param string|int $value the value stored in the database
-     * @param \Doku_Renderer $R the renderer currently used to render the data
-     * @param string $mode The mode the output is rendered in (eg. XHTML)
-     * @return bool true if $mode could be satisfied
-     */
-//    public function renderValue($value, \Doku_Renderer $R, $mode) {
-//
-//        $value = str_pad((string)$value, $this->config['zerofill'], '0', STR_PAD_LEFT);
-//        $R->cdata($value);
-//        return true;
-//    }
-
-    /**
-     * This is called when a single string is needed to represent this Type's current
-     * value as a single (non-HTML) string. Eg. in a dropdown or in autocompletion.
+     * @param string $name     the form name where this has to be stored
+     * @param string $rawvalue the current value
+     * @param string $htmlID   a unique id to be referenced by the label
      *
-     * @param string $value
-     * @return string
+     * @return string html
      */
-//    public function displayValue($value) {
-//        $value = str_pad((string)$this->rawValue($value), $this->config['zerofill'], '0', STR_PAD_LEFT);
-//        return $value;
-//    }
+    public function valueEditor($name, $rawvalue, $htmlID) {
+        $class = 'struct_' . strtolower($this->getClass());
+
+        if(! $rawvalue) {
+            $rawvalue = $this->getMaxValue() + 1;
+        }
+
+        $params = array(
+            'name' => $name,
+            'value' => $rawvalue,
+            'class' => $class,
+            'id' => $htmlID,
+            'readonly' => true
+        );
+        $attributes = buildAttributes($params, true);
+        return "<input $attributes>";
+    }
 
     /**
+     * Bypasses Decimal validation because this type doesn't use its config
+     *
      * @param int|string $rawvalue
      * @return int|string
      * @throws ValidationException
@@ -61,4 +58,22 @@ class Increment extends Decimal {
         return $rawvalue;
     }
 
+    /**
+     * Get the max value found, otherwise 0 to increment upon
+     *
+     * @return int
+     */
+    protected function getMaxValue()
+    {
+        $search = new Search();
+        $search->addSchema($this->context->getTable());
+        $search->addColumn($this->getLabel());
+        $search->addSort($this->getLabel(), false);
+        $search->setLimit(1);
+        $results = $search->execute();
+
+        $value = $results ? ($results[0][0]->getValue()) : 0;
+
+        return $value;
+    }
 }

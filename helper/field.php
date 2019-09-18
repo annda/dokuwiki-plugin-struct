@@ -5,6 +5,7 @@ use dokuwiki\plugin\struct\meta\Search;
 use dokuwiki\plugin\struct\meta\StructException;
 use dokuwiki\plugin\struct\meta\Value;
 use dokuwiki\plugin\struct\meta\ValueValidator;
+use dokuwiki\plugin\struct\types\Increment;
 use dokuwiki\plugin\struct\types\Lookup;
 
 /**
@@ -44,9 +45,9 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
      * @return bool value was set successfully validated
      */
     protected function setVal($value, &$fields = null) {
+        //don't validate placeholders here
         if(!$this->column) {
             $value = '';
-        //don't validate placeholders here
         } elseif($this->replace($value) == $value) {
             $validator = new ValueValidator();
             $this->error = !$validator->validateValue($this->column, $value);
@@ -57,6 +58,20 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
             }
         }
 
+        // handle empty autoincrement field
+        if (! $value && $this->column->getType() instanceof Increment) {
+            $type = $this->column->getType();
+
+            $search = new Search();
+            $search->addSchema($this->column->getTable());
+            $search->addColumn($type->getLabel());
+            $search->addSort($type->getLabel(), false);
+            $search->setLimit(1);
+            $results = $search->execute();
+
+            $value = $results ? ($results[0][0]->getValue() + 1) : 1;
+        }
+
         if($value === array() || $value === '') {
             if(!isset($this->opt['optional'])) {
                 $this->error = true;
@@ -64,7 +79,7 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
             }
         }
 
-        // FIXME replace with value of a bureacracy field
+        // FIXME replace with value of a bureaucracy field
         if ($fields && strpos($value, '@@') === 0 && strrpos($value, '@@') === strlen($value) - 2) {
             /** @var \helper_plugin_bureaucracy_field $field */
             foreach ($fields as $field) {
@@ -79,47 +94,35 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
         return !$this->error;
     }
 
-
     /**
-     * Get the actual value of a lookup field used by action
-     * FIXME multiselect fields
+     * Get the actual display value of a lookup field used in a bureaucracy action
      *
-     * @return array|string
+     * @return string
      */
     public function getReplacementValue() {
         $value = $this->getParam('value');
-        $new_value = [];
 
         if (! $this->column->getType() instanceof Lookup) {
             return $value;
         }
 
+        $new_values = [];
         $config = $this->column->getType()->getConfig();
 
         $search = new Search();
         $search->addSchema($config['schema']);
         $search->addColumn($config['field']);
-        $search->addFilter($config['schema'].'.pid', $value, '=');
+        $search->addFilter('%rowid%', $value, '=');
         $results = $search->execute();
-        $pids = $search->getPids();
 
-
-        foreach ($results as $r) {
-            $new_value[] = $r[0]->getDisplayValue();
+        if ($results) {
+            foreach ($results as $r) {
+                $new_values[] = $r[0]->getDisplayValue();
+            }
         }
 
-//        for($i = 0; $i < count($result); $i++) {
-//            if ($pids[$i] === $value) {
-//                $new_value = $result[$i][0]->getDisplayValue();
-//            }
-//        }
-
-        return implode(', ', $new_value);
+        return implode(', ', $new_values);
     }
-
-
-
-
 
     /**
      * Creates the HTML for the field
