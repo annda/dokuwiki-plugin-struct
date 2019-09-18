@@ -1,6 +1,7 @@
 <?php
 use dokuwiki\plugin\struct\meta\Column;
 use dokuwiki\plugin\struct\meta\Schema;
+use dokuwiki\plugin\struct\meta\Search;
 use dokuwiki\plugin\struct\meta\StructException;
 use dokuwiki\plugin\struct\meta\Value;
 use dokuwiki\plugin\struct\meta\ValueValidator;
@@ -77,6 +78,48 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
         $this->opt['value'] = $value;
         return !$this->error;
     }
+
+
+    /**
+     * Get the actual value of a lookup field used by action
+     * FIXME multiselect fields
+     *
+     * @return array|string
+     */
+    public function getReplacementValue() {
+        $value = $this->getParam('value');
+        $new_value = [];
+
+        if (! $this->column->getType() instanceof Lookup) {
+            return $value;
+        }
+
+        $config = $this->column->getType()->getConfig();
+
+        $search = new Search();
+        $search->addSchema($config['schema']);
+        $search->addColumn($config['field']);
+        $search->addFilter($config['schema'].'.pid', $value, '=');
+        $results = $search->execute();
+        $pids = $search->getPids();
+
+
+        foreach ($results as $r) {
+            $new_value[] = $r[0]->getDisplayValue();
+        }
+
+//        for($i = 0; $i < count($result); $i++) {
+//            if ($pids[$i] === $value) {
+//                $new_value = $result[$i][0]->getDisplayValue();
+//            }
+//        }
+
+        return implode(', ', $new_value);
+    }
+
+
+
+
 
     /**
      * Creates the HTML for the field
