@@ -41,10 +41,9 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
      * Sets the value and validates it
      *
      * @param mixed $value
-     * @param array $fields
      * @return bool value was set successfully validated
      */
-    protected function setVal($value, &$fields = null) {
+    protected function setVal($value) {
         //don't validate placeholders here
         if(!$this->column) {
             $value = '';
@@ -80,15 +79,15 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
         }
 
         // FIXME replace with value of a bureaucracy field
-        if ($fields && strpos($value, '@@') === 0 && strrpos($value, '@@') === strlen($value) - 2) {
-            /** @var \helper_plugin_bureaucracy_field $field */
-            foreach ($fields as $field) {
-                if ($field->opt['label'] === substr($value, 2, -2)) {
-                    $this->opt['value'] = $field->opt['value'];
-                    return !$this->error;
-                }
-            }
-        }
+//        if ($fields && strpos($value, '@@') === 0 && strrpos($value, '@@') === strlen($value) - 2) {
+//            /** @var \helper_plugin_bureaucracy_field $field */
+//            foreach ($fields as $field) {
+//                if ($field->opt['label'] === substr($value, 2, -2)) {
+//                    $this->opt['value'] = $field->opt['value'];
+//                    return !$this->error;
+//                }
+//            }
+//        }
 
         $this->opt['value'] = $value;
         return !$this->error;
@@ -99,30 +98,52 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
      *
      * @return string
      */
-    public function getReplacementValue() {
-        $value = $this->getParam('value');
+//    public function getReplacementValue() {
+//        $value = $this->getParam('value');
+//
+//        if (! $this->column->getType() instanceof Lookup) {
+//            return $value;
+//        }
+//
+//        if (is_array($value)) {
+//            return array($this, 'replacementMultiValueCallback');
+//        }
+//
+//        $new_values = [];
+//        $config = $this->column->getType()->getConfig();
+//
+//        $search = new Search();
+//        $search->addSchema($config['schema']);
+//        $search->addColumn($config['field']);
+//        $search->addFilter('%rowid%', $value, '=');
+//        $results = $search->execute();
+//
+//        if ($results) {
+//            foreach ($results as $r) {
+//                $new_values[] = $r[0]->getDisplayValue();
+//            }
+//        }
+//
+//        return implode(', ', $new_values);
+//    }
+//
+//    public function replacementMultiValueCallback($matches) {
+//        $value = $this->getParam('value');
+//
+//        //default value
+//        if (is_null($value) || $value === false) {
+//            if (isset($matches['default']) && $matches['default'] != '') {
+//                return $matches['default'];
+//            }
+//            return $matches[0];
+//        }
+//
+//        //check if matched string containts a pair of brackets
+//        $delimiter = preg_match('/\(.*\)/s', $matches[0]) ? $matches['delimiter'] : ', ';
+//
+//        return implode($delimiter, $value);
+//    }
 
-        if (! $this->column->getType() instanceof Lookup) {
-            return $value;
-        }
-
-        $new_values = [];
-        $config = $this->column->getType()->getConfig();
-
-        $search = new Search();
-        $search->addSchema($config['schema']);
-        $search->addColumn($config['field']);
-        $search->addFilter('%rowid%', $value, '=');
-        $results = $search->execute();
-
-        if ($results) {
-            foreach ($results as $r) {
-                $new_values[] = $r[0]->getDisplayValue();
-            }
-        }
-
-        return implode(', ', $new_values);
-    }
 
     /**
      * Creates the HTML for the field
