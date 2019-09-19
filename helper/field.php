@@ -89,6 +89,10 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
 //            }
 //        }
 
+        if ($this->column->isMulti()) {
+            $this->opt['value'] = $this->getReplacementValue();
+        }
+
         $this->opt['value'] = $value;
         return !$this->error;
     }
@@ -98,35 +102,35 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
      *
      * @return string
      */
-//    public function getReplacementValue() {
-//        $value = $this->getParam('value');
-//
-//        if (! $this->column->getType() instanceof Lookup) {
-//            return $value;
-//        }
-//
-//        if (is_array($value)) {
-//            return array($this, 'replacementMultiValueCallback');
-//        }
-//
-//        $new_values = [];
-//        $config = $this->column->getType()->getConfig();
-//
-//        $search = new Search();
-//        $search->addSchema($config['schema']);
-//        $search->addColumn($config['field']);
-//        $search->addFilter('%rowid%', $value, '=');
-//        $results = $search->execute();
-//
-//        if ($results) {
-//            foreach ($results as $r) {
-//                $new_values[] = $r[0]->getDisplayValue();
-//            }
-//        }
-//
-//        return implode(', ', $new_values);
-//    }
-//
+    public function getReplacementValue() {
+        $value = $this->getParam('value');
+
+        if (! $this->column->getType() instanceof Lookup) {
+            return $value;
+        }
+
+        if (is_array($value)) {
+            return array($this, 'replacementMultiValueCallback');
+        }
+
+        $new_values = [];
+        $config = $this->column->getType()->getConfig();
+
+        $search = new Search();
+        $search->addSchema($config['schema']);
+        $search->addColumn($config['field']);
+        $search->addFilter('%rowid%', $value, '=');
+        $results = $search->execute();
+
+        if ($results) {
+            foreach ($results as $r) {
+                $new_values[] = $r[0]->getDisplayValue();
+            }
+        }
+
+        return implode(', ', $new_values);
+    }
+
 //    public function replacementMultiValueCallback($matches) {
 //        $value = $this->getParam('value');
 //
