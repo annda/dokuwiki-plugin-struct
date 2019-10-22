@@ -1,9 +1,11 @@
 <?php
 use dokuwiki\plugin\struct\meta\Column;
 use dokuwiki\plugin\struct\meta\Schema;
+use dokuwiki\plugin\struct\meta\Search;
 use dokuwiki\plugin\struct\meta\StructException;
 use dokuwiki\plugin\struct\meta\Value;
 use dokuwiki\plugin\struct\meta\ValueValidator;
+use dokuwiki\plugin\struct\types\Increment;
 use dokuwiki\plugin\struct\types\Lookup;
 
 /**
@@ -42,9 +44,9 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
      * @return bool value was set successfully validated
      */
     protected function setVal($value) {
+        //don't validate placeholders here
         if(!$this->column) {
             $value = '';
-        //don't validate placeholders here
         } elseif($this->replace($value) == $value) {
             $validator = new ValueValidator();
             $this->error = !$validator->validateValue($this->column, $value);
@@ -53,6 +55,23 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field {
                     msg(hsc($error), -1);
                 }
             }
+        }
+
+        // handle empty autoincrement field
+        if (! $value && $this->column->getType() instanceof Increment) {
+            // FIXME can we do something like this?
+            // $value = $this->column->getMaxValue() + 1;
+
+            $type = $this->column->getType();
+//
+//            $search = new Search();
+//            $search->addSchema($this->column->getTable());
+//            $search->addColumn($type->getLabel());
+//            $search->addSort($type->getLabel(), false);
+//            $search->setLimit(1);
+//            $results = $search->execute();
+//
+//            $value = $results ? ($results[0][0]->getValue() + 1) : 1;
         }
 
         if($value === array() || $value === '') {
