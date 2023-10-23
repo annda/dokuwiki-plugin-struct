@@ -43,9 +43,10 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field
      * Sets the value and validates it
      *
      * @param mixed $value
+     * @param array $fields
      * @return bool value was set successfully validated
      */
-    protected function setVal($value)
+    protected function setVal($value, &$fields = null)
     {
         if (!$this->column) {
             $value = '';
@@ -69,6 +70,17 @@ class helper_plugin_struct_field extends helper_plugin_bureaucracy_field
                     $label = $this->opt['label'];
                 }
                 msg(sprintf($this->getLang('e_required'), hsc($label)), -1);
+            }
+        }
+
+        // replace with value of a bureacracy field
+        if ($fields && strpos($value, '@@') === 0 && strrpos($value, '@@') === strlen($value) - 2) {
+            /** @var \helper_plugin_bureaucracy_field $field */
+            foreach ($fields as $field) {
+                if ($field->opt['label'] === substr($value, 2, -2)) {
+                    $this->opt['value'] = $field->opt['value'];
+                    return !$this->error;
+                }
             }
         }
 
