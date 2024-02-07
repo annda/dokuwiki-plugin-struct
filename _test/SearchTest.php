@@ -16,6 +16,8 @@ class SearchTest extends StructTest
 
     public function setUp(): void
     {
+        parent::setUpBeforeClass();
+
         parent::setUp();
 
         $this->loadSchemaJSON('schema1');
